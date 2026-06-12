@@ -1,0 +1,15 @@
+{
+  "name": "Kri NFT #1234",
+  "description": "First ERC721 NFT on Sepolia",
+  "image": "https://picsum.photos/516",
+  "attributes": [
+    {
+      "trait_type": "Owner",
+      "value": "Krisolut"
+    },
+    {
+      "trait_type": "Token ID",
+      "value": 1234
+    }
+  ]
+}
