@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KriToken Balance Checker</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        #address {
+            margin-top: 10px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>KriToken Balance Checker</h1>
+
+    <button id="connectBtn">Connect MetaMask</button>
+    <button id="balanceBtn">Get Token Balance</button>
+
+    <div id="address"></div>
+    <div id="result">Wallet not connected.</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+
+    <script>
+        const CONTRACT_ADDRESS = "0xFC07686fe677086edc674AD30625D53E01091FEc";
+
+        const ABI = [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function decimals() view returns (uint8)",
+            "function symbol() view returns (string)"
+        ];
+
+        let provider;
+        let account;
+
+        async function connectWallet() {
+
+            if (!window.ethereum) {
+                document.getElementById("result").innerText =
+                    "MetaMask is not installed.";
+                return;
+            }
+
+            try {
+
+                await window.ethereum.request({
+                    method: "eth_requestAccounts"
+                });
+
+                provider = new ethers.BrowserProvider(window.ethereum);
+
+                const network = await provider.getNetwork();
+
+                if (network.chainId !== 11155111n) {
+                    document.getElementById("result").innerText =
+                        "Please switch MetaMask to Sepolia.";
+                    return;
+                }
+
+                const signer = await provider.getSigner();
+                account = await signer.getAddress();
+
+                document.getElementById("address").innerText =
+                    "Connected Wallet: " + account;
+
+                document.getElementById("result").innerText =
+                    "Connected successfully.";
+
+            } catch (error) {
+                document.getElementById("result").innerText =
+                    "Connection failed.";
+                console.error(error);
+            }
+        }
+
+        async function getBalance() {
+
+            if (!provider || !account) {
+                document.getElementById("result").innerText =
+                    "Connect MetaMask first.";
+                return;
+            }
+
+            try {
+
+                const contract = new ethers.Contract(
+                    CONTRACT_ADDRESS,
+                    ABI,
+                    provider
+                );
+
+                const balance = await contract.balanceOf(account);
+                const decimals = await contract.decimals();
+                const symbol = await contract.symbol();
+
+                const formattedBalance =
+                    ethers.formatUnits(balance, decimals);
+
+                document.getElementById("result").innerText =
+                    "Balance: " +
+                    formattedBalance +
+                    " " +
+                    symbol;
+
+            } catch (error) {
+                document.getElementById("result").innerText =
+                    "Error reading token balance.";
+                console.error(error);
+            }
+        }
+
+        document
+            .getElementById("connectBtn")
+            .addEventListener("click", connectWallet);
+
+        document
+            .getElementById("balanceBtn")
+            .addEventListener("click", getBalance);
+    </script>
+
+</body>
+</html>
