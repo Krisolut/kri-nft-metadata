@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>KriToken Transfer</title>
+</head>
+<body>
+
+    <h1>KriToken Transfer</h1>
+
+    <button id="connectBtn">Connect MetaMask</button>
+    <button id="transferBtn">Transfer 10 KRIT</button>
+
+    <p id="account">Wallet not connected.</p>
+    <p id="result">No transaction submitted yet.</p>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+
+    <script>
+        const CONTRACT_ADDRESS = "0xFC07686fe677086edc674AD30625D53E01091FEc";
+        const RECIPIENT_ADDRESS = "0x15433DA387451F9dE4565280C85506CB71aF9376";
+
+        const ABI = [
+            "function transfer(address to, uint256 amount) returns (bool)",
+            "function decimals() view returns (uint8)",
+            "function symbol() view returns (string)"
+        ];
+
+        let provider;
+        let signer;
+        let account;
+
+        async function connectWallet() {
+            if (!window.ethereum) {
+                document.getElementById("result").innerText =
+                    "MetaMask is not installed.";
+                return;
+            }
+
+            try {
+                await window.ethereum.request({
+                    method: "eth_requestAccounts"
+                });
+
+                provider = new ethers.BrowserProvider(window.ethereum);
+
+                const network = await provider.getNetwork();
+
+                if (network.chainId !== 11155111n) {
+                    document.getElementById("result").innerText =
+                        "Please switch MetaMask to Sepolia.";
+                    return;
+                }
+
+                signer = await provider.getSigner();
+                account = await signer.getAddress();
+
+                document.getElementById("account").innerText =
+                    "Connected Wallet: " + account;
+
+                document.getElementById("result").innerText =
+                    "Connected successfully.";
+
+            } catch (error) {
+                document.getElementById("result").innerText =
+                    "Connection failed.";
+                console.error(error);
+            }
+        }
+
+        async function transferTokens() {
+            if (!signer) {
+                document.getElementById("result").innerText =
+                    "Connect MetaMask first.";
+                return;
+            }
+
+            try {
+                const contract = new ethers.Contract(
+                    CONTRACT_ADDRESS,
+                    ABI,
+                    signer
+                );
+
+                const decimals = await contract.decimals();
+                const symbol = await contract.symbol();
+
+                const amount = ethers.parseUnits("10", decimals);
+
+                document.getElementById("result").innerText =
+                    "Please confirm the transaction in MetaMask.";
+
+                const tx = await contract.transfer(
+                    RECIPIENT_ADDRESS,
+                    amount
+                );
+
+                document.getElementById("result").innerText =
+                    "Transaction submitted: " + tx.hash;
+
+                await tx.wait();
+
+                document.getElementById("result").innerText =
+                    "Transfer successful! Sent 10 " + symbol +
+                    ". Transaction hash: " + tx.hash;
+
+            } catch (error) {
+                document.getElementById("result").innerText =
+                    "Transfer failed or rejected.";
+                console.error(error);
+            }
+        }
+
+        document
+            .getElementById("connectBtn")
+            .addEventListener("click", connectWallet);
+
+        document
+            .getElementById("transferBtn")
+            .addEventListener("click", transferTokens);
+    </script>
+
+</body>
+</html>
