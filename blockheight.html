@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sepolia Block Height</title>
+</head>
+<body>
+  <h1>Sepolia Block Height</h1>
+
+  <button id="connectButton">Connect MetaMask</button>
+  <button id="blockButton">Show current Sepolia block height</button>
+
+  <p id="result">No block height loaded yet.</p>
+
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+
+  <script>
+    const connectButton = document.getElementById("connectButton");
+    const blockButton = document.getElementById("blockButton");
+    const result = document.getElementById("result");
+
+    let provider;
+
+    async function connectMetaMask() {
+      if (!window.ethereum) {
+        result.textContent = "MetaMask is not installed.";
+        return;
+      }
+
+      await window.ethereum.request({ method: "eth_requestAccounts" });
+
+      provider = new ethers.BrowserProvider(window.ethereum);
+      const network = await provider.getNetwork();
+
+      if (network.chainId !== 11155111n) {
+        result.textContent = "Please switch MetaMask to the Sepolia testnet.";
+        return;
+      }
+
+      result.textContent = "MetaMask connected to Sepolia.";
+    }
+
+    async function showBlockHeight() {
+      if (!provider) {
+        result.textContent = "Please connect MetaMask first.";
+        return;
+      }
+
+      const blockNumber = await provider.getBlockNumber();
+      result.textContent = "Current Sepolia block height: " + blockNumber;
+    }
+
+    connectButton.addEventListener("click", connectMetaMask);
+    blockButton.addEventListener("click", showBlockHeight);
+  </script>
+</body>
+</html>
